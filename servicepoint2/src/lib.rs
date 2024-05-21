@@ -25,6 +25,9 @@ mod grid;
 mod packet;
 mod pixel_grid;
 
+#[cfg(feature = "bevy_plugin")]
+mod bevy_plugin;
+
 /// size of a single tile in one dimension
 pub const TILE_SIZE: usize = 8;
 
