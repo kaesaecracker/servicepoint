@@ -1,6 +1,10 @@
 // Source: https://github.com/paulkre/bevy_image_export/
 // License: MIT / Apache-2.0
 
+use crate::{
+    BitVec, Command::BitmapLinearWin, CompressionCode::Lzma, Connection,
+    DataRef, Origin, PixelGrid,
+};
 use bevy::{
     ecs::{
         query::QueryItem,
@@ -12,12 +16,16 @@ use bevy::{
         extract_component::{ExtractComponent, ExtractComponentPlugin},
         graph::CameraDriverLabel,
         render_asset::{
-            PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssetUsages, RenderAssets,
+            PrepareAssetError, RenderAsset, RenderAssetPlugin,
+            RenderAssetUsages, RenderAssets,
         },
-        render_graph::{Node, NodeRunError, RenderGraph, RenderGraphContext, RenderLabel},
+        render_graph::{
+            Node, NodeRunError, RenderGraph, RenderGraphContext, RenderLabel,
+        },
         render_resource::{
-            Buffer, BufferDescriptor, BufferUsages, Extent3d, ImageCopyBuffer, ImageDataLayout,
-            MapMode, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+            Buffer, BufferDescriptor, BufferUsages, Extent3d, ImageCopyBuffer,
+            ImageDataLayout, MapMode, TextureDescriptor, TextureDimension,
+            TextureFormat, TextureUsages,
         },
         renderer::{RenderContext, RenderDevice},
         Render, RenderApp, RenderSet,
@@ -25,9 +33,6 @@ use bevy::{
 };
 use futures::channel::oneshot;
 use image::{ImageBuffer, Rgba};
-use crate::{
-    BitVec, Command::BitmapLinearWin, CompressionCode::Lzma, Connection, DataRef, Origin, PixelGrid,
-};
 use wgpu::Maintain;
 
 #[derive(Asset, Reflect, Clone, Default)]
@@ -89,10 +94,11 @@ impl RenderAsset for ServicePointExportSource {
 
         let size = gpu_image.texture.size();
         let format = &gpu_image.texture_format;
-        let bytes_per_row =
-            (size.width / format.block_dimensions().0) * format.block_copy_size(None).unwrap();
+        let bytes_per_row = (size.width / format.block_dimensions().0)
+            * format.block_copy_size(None).unwrap();
         let padded_bytes_per_row =
-            RenderDevice::align_copy_bytes_per_row(bytes_per_row as usize) as u32;
+            RenderDevice::align_copy_bytes_per_row(bytes_per_row as usize)
+                as u32;
 
         let source_size = gpu_image.texture.size();
 
@@ -148,8 +154,9 @@ fn get_image_bytes_from_gpu(
     if bytes_per_row == padded_bytes_per_row {
         vec
     } else {
-        let mut unpadded_bytes =
-            Vec::<u8>::with_capacity(source_size.height as usize * bytes_per_row);
+        let mut unpadded_bytes = Vec::<u8>::with_capacity(
+            source_size.height as usize * bytes_per_row,
+        );
 
         for padded_row in vec.chunks(padded_bytes_per_row) {
             unpadded_bytes.extend_from_slice(&padded_row[..bytes_per_row]);
@@ -188,7 +195,8 @@ fn send_buffer_to_connection(
             Some(buffer) => buffer,
         };
 
-        let mut bit_vec = BitVec::new(settings.window_height * settings.window_width);
+        let mut bit_vec =
+            BitVec::new(settings.window_height * settings.window_width);
 
         for (index, pixel) in buffer.chunks_exact(4).enumerate() {
             assert_eq!(pixel.len(), 4);
@@ -197,11 +205,15 @@ fn send_buffer_to_connection(
             }
         }
 
-        let pixels = PixelGrid::load(settings.window_width, settings.window_height, bit_vec.data_ref());
+        let pixels = PixelGrid::load(
+            settings.window_width,
+            settings.window_height,
+            bit_vec.data_ref(),
+        );
 
         connection
             .connection
-            .send(BitmapLinearWin(Origin(settings.window_x, settings.window_y), pixels, Lzma).into())
+            .send(BitmapLinearWin(settings.origin, pixels, Lzma).into())
             .expect("send failed");
     }
 }
@@ -217,21 +229,25 @@ impl Plugin for ServicePointPlugin {
                 .chain()
                 .before(CameraUpdateSystem),
         )
-            .register_type::<ServicePointExportSource>()
-            .init_asset::<ServicePointExportSource>()
-            .register_asset_reflect::<ServicePointExportSource>()
-            .add_plugins((
-                RenderAssetPlugin::<ServicePointExportSource>::default(),
-                ExtractComponentPlugin::<ServicePointExportSettings>::default(),
-            ))
-            .add_systems(
-                PostUpdate,
-                (apply_deferred.in_set(ImageExportSystems::SetupImageExportFlush),),
-            );
+        .register_type::<ServicePointExportSource>()
+        .init_asset::<ServicePointExportSource>()
+        .register_asset_reflect::<ServicePointExportSource>()
+        .add_plugins((
+            RenderAssetPlugin::<ServicePointExportSource>::default(),
+            ExtractComponentPlugin::<ServicePointExportSettings>::default(),
+        ))
+        .add_systems(
+            PostUpdate,
+            (
+                apply_deferred
+                    .in_set(ImageExportSystems::SetupImageExportFlush),
+            ),
+        );
 
         let render_app = app.sub_app_mut(RenderApp);
 
-        let connection = Connection::open(&self.bind).expect("could not connect to display");
+        let connection =
+            Connection::open(&self.bind).expect("could not connect to display");
 
         render_app
             .insert_resource(ServicePointPluginConnection { connection })
@@ -242,7 +258,8 @@ impl Plugin for ServicePointPlugin {
                     .before(RenderSet::Cleanup),
             );
 
-        let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
+        let mut graph =
+            render_app.world.get_resource_mut::<RenderGraph>().unwrap();
 
         graph.add_node(ImageExportLabel, ImageExportNode);
         graph.add_node_edge(CameraDriverLabel, ImageExportLabel);
@@ -280,7 +297,6 @@ pub fn make_export_bundle(
     export_texture.resize(size);
 
     let export_texture = images.add(export_texture);
-
 
     let mut export_camera = Camera2dBundle {
         camera: Camera {
