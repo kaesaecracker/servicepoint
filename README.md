@@ -149,6 +149,7 @@ It is recommended to include all features for builds used outside of rust.
 
 - screen simulator (rust): https://github.com/kaesaecracker/pixel-receiver-rs
 - tanks game (C#): https://github.com/kaesaecracker/cccb-tanks-cs
+- asteroids clone (rust, bevy): https://github.com/kaesaecracker/servicepoint-bevyroids
 
 To add yourself to the list, open a pull request.
 
