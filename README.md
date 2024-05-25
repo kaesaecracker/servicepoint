@@ -149,6 +149,7 @@ It is recommended to include all features for builds used outside of rust.
 
 - screen simulator (rust): https://github.com/kaesaecracker/pixel-receiver-rs
 - tanks game (C#): https://github.com/kaesaecracker/cccb-tanks-cs
+- asteroids clone (rust, bevy): https://github.com/kaesaecracker/servicepoint-bevyroids
 
 To add yourself to the list, open a pull request.
 
@@ -161,3 +162,10 @@ This library is a spiritual mix of a not-yet-working rust library called `servic
 Contributions are accepted in any form (issues, documentation, feature requests, code, review, ...).
 
 All creatures welcome.
+
+## License
+
+The bevy plugin is based on [bevy_image_export](https://github.com/paulkre/bevy_image_export/).
+They keep their original MIT/Apache-2.0 dual license.
+
+Everything else is licensed as stated in the LICENSE file.
